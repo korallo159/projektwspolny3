@@ -1,0 +1,6 @@
+name: Jbwm
+version: ${project.version}
+main: jbwm.jbwm.Jbwm
+api-version: 1.13
+authors: [koral, michalas]
+description: mc plugin
