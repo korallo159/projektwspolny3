@@ -2,19 +2,22 @@ package jbwm.jbwm;
 
 import com.google.common.collect.Lists;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.junit.Test;
 
 import java.util.List;
 import java.util.logging.Logger;
 
 public final class Jbwm extends JavaPlugin {
+    public static Jbwm plugin;
 
     @Override
     public void onEnable() {
-        // Plugin startup logic
+        plugin = this;
+
+        new TestKomenda();
     }
     @Override
     public void onDisable() {
-        // Plugin shutdown logic
     }
 
 
