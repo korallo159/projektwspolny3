@@ -16,8 +16,6 @@ import org.bukkit.plugin.Plugin;
 import com.google.common.collect.Lists;
 
 public abstract class JbwmCommand implements TabExecutor {
-    List<PluginCommand> _komendy = Lists.newArrayList();
-    boolean _zarejestrowane_komendy = true;
     public JbwmCommand(String komenda) {
         ustawKomende(komenda, null, null);
     }
@@ -68,7 +66,6 @@ public abstract class JbwmCommand implements TabExecutor {
         komenda.setUsage(użycie);
         if (aliasy != null)
             komenda.setAliases(aliasy);
-        _komendy.add(komenda);
         return komenda;
     }
 
@@ -98,19 +95,15 @@ public abstract class JbwmCommand implements TabExecutor {
     @Override
     public abstract boolean onCommand(CommandSender sender, Command cmd, String label, String[] args);
 
+
     protected List<String> utab(String[] wpisane, String... Podpowiedzi) {
         return uzupełnijTabComplete(wpisane, Lists.newArrayList(Podpowiedzi));
     }
     protected List<String> utab(String[] wpisane, Iterable<String> Podpowiedzi) {
         return uzupełnijTabComplete(wpisane, Podpowiedzi);
     }
-    // TODO Func
-    static String ostatni(String[] stringi) {
-        if (stringi.length == 0) return "";
-        return stringi[stringi.length-1];
-    }
     protected List<String> uzupełnijTabComplete(String[] wpisane, Iterable<String> Podpowiedzi) {
-        return uzupełnijTabComplete(ostatni(wpisane), Podpowiedzi);
+        return uzupełnijTabComplete(Func.ostatni(wpisane), Podpowiedzi);
     }
     protected List<String> uzupełnijTabComplete(String wpisane, Iterable<String> Podpowiedzi) {
         List<String> lista = Lists.newArrayList();
