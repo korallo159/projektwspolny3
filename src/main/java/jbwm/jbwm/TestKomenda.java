@@ -2,19 +2,10 @@ package jbwm.jbwm;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockPlaceEvent;
 
 import java.util.List;
 
-public class TestKomenda extends JbwmCommand implements Listener {
-    @EventHandler
-    public void onBlockPlace(BlockPlaceEvent ev) {
-        Jbwm.log(ev.getBlock());
-    }
-
-
+public class TestKomenda extends JbwmCommand {
     public TestKomenda() {
         super("testcmd", "/test 123", "cmdtest", "ttest");
     }
@@ -32,7 +23,7 @@ public class TestKomenda extends JbwmCommand implements Listener {
                 // /testcmd a
                 case "a":
                     this.config.conf.set("test2", 2);
-                    this.config.zapisz();
+                    this.config.save();
                     Jbwm.log(1);
                     break;
                 // /testcmd b

@@ -31,7 +31,7 @@ public class Config {
      * Zapisuje plik i go przeładowywuje
      *
      */
-    public void zapisz() {
+    public void save() {
         try {
             this.conf.save(f);
         } catch (IOException e) {

@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class JbwmMinezChests extends JbwmCommand implements Listener {
+    final Config config = new Config("Treasure chests");
 
     public JbwmMinezChests() {
         super("tchest");
@@ -67,10 +68,13 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
 
             }
             /**
-             * TODO: dodac do configu, tak zeby mozna bylo sie odwolac do tych itemow po restarcie
+             * zapisywanie do configu
+             * TODO: odwołać się do nazwy skrzyni
              */
+            config.conf.set("nazwa, to sie zmieni", items);
+            config.save();
         }
-        }
+    }
 
     /** usuwa skrzynke po jej otworzeniu i zabraniu wszystkich przedmiotow
      * * TODO: Check that its treasure chest, add animation
@@ -97,11 +101,6 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
             }
         }
     }
-*/
-
-
-
-
-
-    }
+    */
+}
 
