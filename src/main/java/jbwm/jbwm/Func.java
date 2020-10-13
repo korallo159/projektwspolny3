@@ -8,7 +8,7 @@ import java.util.List;
  * Zbiór Funkcji przydatnych w programie
  *
  */
-public final class Func {
+public abstract class Func {
     /**
      * @param tab tablica
      * @return ostatni element tablicy

@@ -2,10 +2,19 @@ package jbwm.jbwm;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockPlaceEvent;
 
 import java.util.List;
 
-public class TestKomenda extends JbwmCommand {
+public class TestKomenda extends JbwmCommand implements Listener {
+    @EventHandler
+    public void onBlockPlace(BlockPlaceEvent ev) {
+        Jbwm.log(ev.getBlock());
+    }
+
+
     public TestKomenda() {
         super("testcmd", "/test 123", "cmdtest", "ttest");
     }
