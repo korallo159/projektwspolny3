@@ -1,18 +1,13 @@
 package jbwm.jbwm;
 
-import org.bukkit.event.Listener;
+import com.google.common.collect.Lists;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.List;
 import java.util.logging.Logger;
 
 public final class Jbwm extends JavaPlugin {
     public static Jbwm plugin;
-
-    /**
-     * tablica wszystkich klas z projektu, które muszą być stworzone tylko raz
-     *
-     */
-    Class<?>[] classes = new Class<?>[] {TestKomenda.class};
 
     @Override
     public void onLoad() {
@@ -20,35 +15,11 @@ public final class Jbwm extends JavaPlugin {
     }
     @Override
     public void onEnable() {
-        // Tworzenie głównych klas modułów
-        for (Class<?> clazz : this.classes)
-            this.createInstance(clazz);
+        new TestKomenda();
+        new JbwmMinezChests();
     }
     @Override
     public void onDisable() {
-    }
-
-    /**
-     * Tworzy obkiet z klasy i go rejestruje
-     *
-     * @param clazz klasa obiektu
-     */
-    private void createInstance(Class<?> clazz) {
-        try {
-            this.register(clazz.newInstance());
-        } catch (Throwable e) {
-            Jbwm.error("Failed to create " + clazz.getSimpleName());
-        }
-    }
-
-    /**
-     * Rejestruje objekt tam gdzie to możliwe
-     *
-     * @param obj rejestrowany obiekt
-     */
-    private void register(Object obj) {
-        if (obj instanceof Listener)
-            this.getServer().getPluginManager().registerEvents((Listener) obj, this);
     }
 
 
