@@ -18,13 +18,17 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryEvent;
+import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
@@ -32,26 +36,20 @@ import java.util.function.Supplier;
 
 import static jbwm.jbwm.Jbwm.plugin;
 
-/**
- *
- * 0.1 jak zniszczysz skrzynie recznie, to usuwa rowniez w configu z id
- * 1.jak ktos grzebie w skrzyni to usuwa po 5 min
- * 3.zrobic tak, aby komenda mozna bylo ustawic ile dana skrzynia ma respawnu
- *
- *
- */
-
 public class JbwmMinezChests extends JbwmCommand implements Listener {
     final Config config = new Config("Treasure chests");
 
     public JbwmMinezChests() {
         super("tchest");
+
+        if (!config.conf.contains("sc"))
+            config.conf.set("sc", "jakaś wartość");
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
         if (args.length <= 1)
-            return utab(args, "addnew", "remove", "editor", "tp");
+            return utab(args, "addnew", "remove", "editor", "tp", "setrespawntime");
         return null;
     }
 
@@ -95,6 +93,40 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
                     player.removeMetadata("edytor", plugin);
                     player.sendMessage("Wylaczyles edytowanie tchestow.");
                 }
+                break;
+            case "setrespawntime":
+                if (args.length < 2){
+                    player.sendMessage("/tchest setrespawntime <minutes>");
+                    break;
+                }
+                int minutes = 0;
+                try {
+                    minutes = Integer.parseInt(args[1]);
+                } catch (Throwable e) {
+                    player.sendMessage("incorrect minutes");
+                    break;
+                }
+                Block block = player.getTargetBlock(5);
+                if (block.getState() instanceof Chest) {
+                    Chest chest = (Chest) block.getState();
+
+                    String chestName = chest.getCustomName();
+                    if (chestName == null || !chestName.equals(ChatColor.RED + "Treasure chest")) break;
+
+                    String id = findChest(chest.getInventory().getLocation());
+                    if (id == null) {
+                        player.sendMessage("To nie treasure chest");
+                        break;
+                    }
+
+                    config.conf.set("Chest." + id + ".respawn", minutes * 60 * 20);
+                    config.save();
+
+                    player.sendMessage("Ustawiłeś respawn tej skrzyni na " + minutes + " minut");
+
+                }
+                    
+                break;
         }
         return true;
     }
@@ -120,6 +152,36 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
         return tchest;
     }
 
+
+    Chest getTchest(InventoryEvent e) {
+        InventoryHolder holder = e.getInventory().getHolder();
+
+        Chest chest;
+        if (holder instanceof DoubleChest)
+            chest = (Chest) ((DoubleChest) holder).getLocation().getBlock().getState();
+        else if (holder instanceof Chest)
+            chest = (Chest) e.getInventory().getHolder();
+        else
+            return null;
+
+        String chestName = chest.getCustomName();
+        if (chestName == null || !chestName.equals(ChatColor.RED + "Treasure chest")) return null;
+
+        return chest;
+    }
+
+
+    @EventHandler
+    public void onInventoryOpen(InventoryOpenEvent e) {
+        Chest chest = getTchest(e);
+        if (chest == null) return;
+
+        BukkitTask task = Bukkit.getServer().getScheduler().runTaskLater(plugin, () -> {
+            removeChest(chest.getInventory().getLocation());
+        }, 5 * 60 * 20);
+
+    }
+
     @EventHandler
     public void onBlockBreak(BlockBreakEvent e) {
         if (!isEditing(e.getPlayer())) return;
@@ -139,45 +201,31 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
         config.save();
 
         if (!chest.getBlockData().getAsString().contains("type=single"))
-            getSecondChest(loc).getBlock().setType(Material.AIR);
+            getSecondChest(chest).getBlock().setType(Material.AIR);
         loc.getBlock().setType(Material.AIR);
 
         e.getPlayer().sendMessage("Usunięto Tchesta");
     }
 
-    Location getSecondChest(Location loc) {
+    Location getSecondChest(Chest chest) {
+        Location loc = chest.getInventory().getLocation();
+        Jbwm.log(loc, chest.getBlockData());
         if (("" + loc.getX()).endsWith(".5"))
             return loc.clone().add(1, 0, 0);
         else
             return loc.clone().add(0, 0, 1);
     };
 
-    /**
-     * *podczas zamykania inv sprawdza czy ma permisje tchest.create jesli tak, to sprawdza czy ma editora.
-     * *reszta zapisuje do configu items bez serialize
-     * *kazda nowa skrzynka to nowe ID, zeby mozna bylo sie fajnie do nich odnosic
-     **/
     @EventHandler
     public void onTChestClose(InventoryCloseEvent e) {
+
+        Chest chest = getTchest(e);
+        if (chest == null) return;
+
         Player p = (Player) e.getPlayer();
 
-        InventoryHolder holder = e.getInventory().getHolder();
-
-        Chest chest;
-        if (holder instanceof DoubleChest)
-            chest = (Chest) ((DoubleChest) holder).getLocation().getBlock().getState();
-        else if (holder instanceof Chest)
-            chest = (Chest) e.getInventory().getHolder();
-        else
-            return;
-
-        String chestName = chest.getCustomName();
-        if (chestName == null || !chestName.equals(ChatColor.RED + "Treasure chest")) return;
-
         if (isEditing(p))
-            onTChestCloseSaveItems(p, holder.getInventory().getLocation());
-        else
-            onChestCloseRemove(holder.getInventory().getLocation());
+            onTChestCloseSaveItems(p, chest.getInventory().getLocation());
     }
 
     void onTChestCloseSaveItems(Player p, Location loc) {
@@ -191,6 +239,7 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
         Consumer<Object> save = i -> {
             config.conf.set("Chest." + i + ".Items", items);
             config.conf.set("Chest." + i + ".Location", loc);
+            config.conf.set("Chest." + i + ".respawn", 5 * 60 * 60 * 20);
             config.save();
         };
 
@@ -223,7 +272,7 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
         return null;
     }
 
-    void onChestCloseRemove(Location loc) {
+    void removeChest(Location loc) {
         Chest oldChest = (Chest) loc.getBlock().getState();
 
         String id = findChest(loc);
@@ -232,7 +281,8 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
 
         Block block = oldChest.getBlock();
 
-        Supplier<Location> secondChest = () -> getSecondChest(loc);
+        Location _loc = getSecondChest(oldChest);
+        Supplier<Location> secondChest = () -> _loc;
 
         boolean doubleChest = !oldChest.getBlockData().getAsString().contains("type=single");
         if (doubleChest)
@@ -245,18 +295,20 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
             block.setBlockData(oldChest.getBlockData());
 
             Chest newChest = (Chest) block.getState();
+            newChest.setCustomName(oldChest.getCustomName());
             if (doubleChest) {
                 Block block2 = secondChest.get().getBlock();
                 block2.setType(oldChest.getType());
-                BlockData data2 = Bukkit.createBlockData(oldChest.getBlockData().getAsString().replace("type=left", "type=right"));
-                block2.setBlockData(data2);
-                block2.getState().update();
+                String data = oldChest.getBlockData().getAsString();
+                data = data.contains("type=left") ? data.replace("type=left", "type=right") : data.replace("type=right", "type=left");
+                block2.setBlockData(Bukkit.createBlockData(data));
+                ((Chest) block2.getState()).setCustomName(oldChest.getCustomName());
             }
             newChest.setCustomName(oldChest.getCustomName());
             newChest.update();
 
             insertItems(newChest.getInventory(), items);
-        }, 80L);
+        }, config.conf.getLong("Chest." + id + ".respawn"));
     }
 
     /**
