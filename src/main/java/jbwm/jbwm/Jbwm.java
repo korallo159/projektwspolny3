@@ -14,7 +14,7 @@ public final class Jbwm extends JavaPlugin {
      * tablica wszystkich klas z projektu, które muszą być stworzone tylko raz
      *
      */
-    Class<?>[] classes = new Class<?>[] {TestKomenda.class, JbwmMinezChests.class};
+    Class<?>[] classes = new Class<?>[] {TestKomenda.class, JbwmMinezChests.class, JbwmMinezChat.class};
 
 
     @Override
