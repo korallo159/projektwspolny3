@@ -6,9 +6,9 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
 import org.bukkit.block.DoubleChest;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
@@ -21,18 +21,17 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static jbwm.jbwm.Jbwm.plugin;
 
 /**
  *
- * 0 ogarnac dzialanie do doublechesta
  * 0.1 jak zniszczysz skrzynie recznie, to usuwa rowniez w configu z id
  * 1.jak ktos grzebie w skrzyni to usuwa po 5 min
  * 3.zrobic tak, aby komenda mozna bylo ustawic ile dana skrzynia ma respawnu
@@ -88,8 +87,8 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
                 break;
             case "editor":
                 if (!isEditing(player)) {
-                    if (!player.hasPermission("tchest.create")) return false; // TODO permisja
                     player.setMetadata("edytor", new FixedMetadataValue(plugin, true));
+                    player.sendMessage("Wlaczyles edytowanie tchestow");
                 } else {
                     player.removeMetadata("edytor", plugin);
                     player.sendMessage("Wylaczyles edytowanie tchestow.");
@@ -129,54 +128,41 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
     public void onTChestClose(InventoryCloseEvent e) {
         Player p = (Player) e.getPlayer();
 
-        Jbwm.log(e.getInventory().getHolder());
-
         InventoryHolder holder = e.getInventory().getHolder();
 
-        if (holder instanceof DoubleChest) {
-            DoubleChest chest = (DoubleChest) holder;
-            Jbwm.log(chest.getLocation());
-
-            Jbwm.log(((Chest) chest.getLocation().getBlock().getState()).getCustomName());
-
+        Chest chest;
+        if (holder instanceof DoubleChest)
+            chest = (Chest) ((DoubleChest) holder).getLocation().getBlock().getState();
+        else if (holder instanceof Chest)
+            chest = (Chest) e.getInventory().getHolder();
+        else
             return;
-        }
 
-
-        if (!(holder instanceof Chest)) return;
-
-        String chestName = ((Chest) e.getInventory().getHolder()).getCustomName();
+        String chestName = chest.getCustomName();
         if (chestName == null || !chestName.equals(ChatColor.RED + "Treasure chest")) return;
 
         if (isEditing(p))
-            onTChestCloseSaveItems(e);
+            onTChestCloseSaveItems(p, holder.getInventory().getLocation());
         else
-            onSingleChestCloseRemove(e);
-
+            onChestCloseRemove(holder.getInventory().getLocation());
     }
 
-    /**
-     *  Zapisuje itemy ze skrzyni oraz lokacje do configu
-     * @param e event
-     */
-    void onTChestCloseSaveItems(InventoryCloseEvent e) {
-        Player p = (Player) e.getPlayer();
-
-        Chest chest = (Chest) e.getInventory().getHolder();
-        Block b = chest.getBlock();
+    void onTChestCloseSaveItems(Player p, Location loc) {
+        Block b = loc.getBlock();;
+        Chest chest = (Chest) b.getState();
         ArrayList<ItemStack> items = new ArrayList<>();
-        for (ItemStack is : e.getInventory())
+        for (ItemStack is : chest.getInventory())
             if (is != null)
                 items.add(is);
 
         Consumer<Object> save = i -> {
             config.conf.set("Chest." + i + ".Items", items);
-            config.conf.set("Chest." + i + ".Location", b.getLocation());
+            config.conf.set("Chest." + i + ".Location", loc);
             config.save();
         };
 
 
-        String id = findChest(b.getLocation());
+        String id = findChest(loc);
         if (id != null) {
             save.accept(id);
             p.sendMessage("Zedytowano zawartość treasure chesta.");
@@ -204,21 +190,30 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
         return null;
     }
 
+    void onChestCloseRemove(Location loc) {
 
-    /**
-     * niszczy skrzynie i stawia ją na nowo po jakimś czasie
-     * @param e event
-     */
-    void onSingleChestCloseRemove(InventoryCloseEvent e) {
-        Player p = (Player) e.getPlayer();
+        Chest oldChest = (Chest) loc.getBlock().getState();
 
-        Chest oldChest = (Chest) e.getInventory().getHolder();
-
-        String id = findChest(oldChest.getLocation());
+        String id = findChest(loc);
         if (id == null) return;
         List<ItemStack> items = (List<ItemStack>) config.conf.getList("Chest." + id + ".Items");
 
         Block block = oldChest.getBlock();
+
+        Supplier<Location> secondChest = () -> {
+          if (("" + loc.getX()).endsWith(".5")) {
+              Jbwm.log(1);
+              return loc.clone().add(1, 0, 0);
+          }
+          else {
+              Jbwm.log(2);
+              return loc.clone().add(0, 0, 1);
+          }
+        };
+
+        boolean doubleChest = !oldChest.getBlockData().getAsString().contains("type=single");
+        if (doubleChest)
+            secondChest.get().getBlock().setType(Material.AIR);
 
         block.setType(Material.AIR);
 
@@ -227,10 +222,17 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
             block.setBlockData(oldChest.getBlockData());
 
             Chest newChest = (Chest) block.getState();
+            if (doubleChest) {
+                Block block2 = secondChest.get().getBlock();
+                block2.setType(oldChest.getType());
+                BlockData data2 = Bukkit.createBlockData(oldChest.getBlockData().getAsString().replace("type=left", "type=right"));
+                block2.setBlockData(data2);
+                block2.getState().update();
+            }
             newChest.setCustomName(oldChest.getCustomName());
-            newChest.update(false, false);
+            newChest.update();
 
-            insertItems(newChest.getBlockInventory(), items);
+            insertItems(newChest.getInventory(), items);
         }, 80L);
     }
 
