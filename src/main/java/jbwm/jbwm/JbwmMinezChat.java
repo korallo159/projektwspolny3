@@ -34,6 +34,14 @@ public class JbwmMinezChat extends JbwmCommand implements Listener {
         return null;
     }
 
+    @EventHandler
+    public void onPlayerJoinEvent(PlayerJoinEvent e ){
+        Player p = e.getPlayer();
+        if(p.hasPermission("localchat.bypass")){
+            p.setMetadata("bypass", new FixedMetadataValue(plugin, true));
+        }
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) return true;
