@@ -6,6 +6,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
 import org.bukkit.block.DoubleChest;
 import org.bukkit.block.data.BlockData;
@@ -15,6 +16,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -118,6 +120,37 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
         return tchest;
     }
 
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent e) {
+        if (!isEditing(e.getPlayer())) return;
+
+        BlockState state = e.getBlock().getState();
+        if (!(state instanceof Chest)) return;
+        Chest chest = (Chest) state;
+
+        if (!chest.getCustomName().equals(ChatColor.RED + "Treasure chest")) return;
+
+        Location loc = chest.getInventory().getLocation();
+
+        String id = findChest(loc);
+        if (id == null) return;
+
+        config.conf.set(id, null);
+        config.save();
+
+        if (!chest.getBlockData().getAsString().contains("type=single"))
+            getSecondChest(loc).getBlock().setType(Material.AIR);
+        loc.getBlock().setType(Material.AIR);
+
+        e.getPlayer().sendMessage("Usunięto Tchesta");
+    }
+
+    Location getSecondChest(Location loc) {
+        if (("" + loc.getX()).endsWith(".5"))
+            return loc.clone().add(1, 0, 0);
+        else
+            return loc.clone().add(0, 0, 1);
+    };
 
     /**
      * *podczas zamykania inv sprawdza czy ma permisje tchest.create jesli tak, to sprawdza czy ma editora.
@@ -191,7 +224,6 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
     }
 
     void onChestCloseRemove(Location loc) {
-
         Chest oldChest = (Chest) loc.getBlock().getState();
 
         String id = findChest(loc);
@@ -200,16 +232,7 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
 
         Block block = oldChest.getBlock();
 
-        Supplier<Location> secondChest = () -> {
-          if (("" + loc.getX()).endsWith(".5")) {
-              Jbwm.log(1);
-              return loc.clone().add(1, 0, 0);
-          }
-          else {
-              Jbwm.log(2);
-              return loc.clone().add(0, 0, 1);
-          }
-        };
+        Supplier<Location> secondChest = () -> getSecondChest(loc);
 
         boolean doubleChest = !oldChest.getBlockData().getAsString().contains("type=single");
         if (doubleChest)
@@ -252,7 +275,6 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
             }
         }
     }
-
 }
 
 
