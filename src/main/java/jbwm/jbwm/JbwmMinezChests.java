@@ -8,6 +8,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
+import org.bukkit.block.DoubleChest;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
@@ -16,9 +17,11 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,9 +35,7 @@ import static jbwm.jbwm.Jbwm.plugin;
  * 0 ogarnac dzialanie do doublechesta
  * 0.1 jak zniszczysz skrzynie recznie, to usuwa rowniez w configu z id
  * 1.jak ktos grzebie w skrzyni to usuwa po 5 min
- * 2.usuwanie skrzyni i przywracanie jej po czasie z itemami
  * 3.zrobic tak, aby komenda mozna bylo ustawic ile dana skrzynia ma respawnu
- * 4.randomowosc
  *
  *
  */
@@ -128,7 +129,21 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
     public void onTChestClose(InventoryCloseEvent e) {
         Player p = (Player) e.getPlayer();
 
-        if (!(e.getInventory().getHolder() instanceof Chest)) return;
+        Jbwm.log(e.getInventory().getHolder());
+
+        InventoryHolder holder = e.getInventory().getHolder();
+
+        if (holder instanceof DoubleChest) {
+            DoubleChest chest = (DoubleChest) holder;
+            Jbwm.log(chest.getLocation());
+
+            Jbwm.log(((Chest) chest.getLocation().getBlock().getState()).getCustomName());
+
+            return;
+        }
+
+
+        if (!(holder instanceof Chest)) return;
 
         String chestName = ((Chest) e.getInventory().getHolder()).getCustomName();
         if (chestName == null || !chestName.equals(ChatColor.RED + "Treasure chest")) return;
@@ -206,17 +221,16 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
         Block block = oldChest.getBlock();
 
         block.setType(Material.AIR);
+
         Bukkit.getServer().getScheduler().runTaskLater(plugin, () -> {
             block.setType(oldChest.getType());
             block.setBlockData(oldChest.getBlockData());
 
-            Chest newChest = (Chest)block.getState();
+            Chest newChest = (Chest) block.getState();
             newChest.setCustomName(oldChest.getCustomName());
             newChest.update(false, false);
 
             insertItems(newChest.getBlockInventory(), items);
-
-
         }, 80L);
     }
 

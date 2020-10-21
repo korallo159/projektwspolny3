@@ -1,6 +1,7 @@
 package jbwm.jbwm;
 
 import org.bukkit.event.Listener;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.logging.Logger;
@@ -52,7 +53,11 @@ public final class Jbwm extends JavaPlugin {
             this.getServer().getPluginManager().registerEvents((Listener) obj, this);
     }
 
-
+    public static void dodajPermisje(String... permisje) {
+        PluginManager pluginManager = plugin.getServer().getPluginManager();
+        for (String permisja : permisje)
+            pluginManager.addPermission(new org.bukkit.permissions.Permission(permisja));
+    }
 
     private static final Logger logger = Logger.getLogger("Minecraft");
     private static final String logprefix = "[Jbwm] ";
