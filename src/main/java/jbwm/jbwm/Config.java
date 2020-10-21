@@ -65,17 +65,16 @@ public class Config {
             } catch (IOException e) {
                 Jbwm.error("Failed to create " + f.getAbsolutePath());
             }
-
         this.conf = YamlConfiguration.loadConfiguration(f);
     }
 
 
     @SuppressWarnings("resource")
     public static boolean wyjmijPlik(String co, String gdzie) {
-        String nazwaPluginu = Jbwm.plugin.getName();
+        Jbwm.warn(co, gdzie);
         File f2 = new File(gdzie);
         try {
-            JarFile jar = new JarFile("plugins/"+nazwaPluginu+".jar");
+            JarFile jar = new JarFile("plugins/JBWM.jar");
             JarEntry plik = jar.getJarEntry(co);
             if (plik == null)
                 return false;

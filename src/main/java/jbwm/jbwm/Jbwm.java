@@ -10,6 +10,7 @@ public final class Jbwm extends JavaPlugin {
     public static Jbwm plugin;
 
 
+
     /**
      * tablica wszystkich klas z projektu, które muszą być stworzone tylko raz
      *
@@ -23,6 +24,7 @@ public final class Jbwm extends JavaPlugin {
     }
     @Override
     public void onEnable() {
+        final Config test = new Config("test"); // TODO usunąć
         // Tworzenie głównych klas modułów
         for (Class<?> clazz : this.classes)
             this.createInstance(clazz);
