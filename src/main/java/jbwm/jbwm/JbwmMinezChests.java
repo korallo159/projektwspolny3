@@ -49,7 +49,7 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
         if (args.length <= 1)
-            return utab(args, "addnew", "remove", "editor", "tp", "setrespawntime");
+            return utab(args, "addnew", "remove", "editor", "tp", "setrespawntime", "reload");
         return null;
     }
 
@@ -75,6 +75,10 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
                     } else
                         player.sendMessage("Nie ma skrzyni z takim ID");
                 }
+                break;
+
+            case "reload":
+                config.reload();
                 break;
             case "tp":
                 if (StringUtils.isNumeric(args[0])) {
@@ -127,6 +131,7 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
                 }
                     
                 break;
+
         }
         return true;
     }

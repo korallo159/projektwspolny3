@@ -48,6 +48,9 @@ public class JbwmMinezChat extends JbwmCommand implements Listener {
         if (args.length < 1) return false;
         Player player = ((Player) sender).getPlayer();
         switch (args[0]) {
+            case "reload":
+                config.reload();
+                break;
             case "bypass":
                 if (!isChatBypassing(player)) {
                     player.setMetadata("bypass", new FixedMetadataValue(plugin, true));
