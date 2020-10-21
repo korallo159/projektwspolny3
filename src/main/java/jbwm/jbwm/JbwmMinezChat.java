@@ -1,5 +1,6 @@
 package jbwm.jbwm;
 
+import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -12,17 +13,19 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerChatEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.metadata.FixedMetadataValue;
 
 import java.util.List;
-
 import static jbwm.jbwm.Jbwm.plugin;
 
 public class JbwmMinezChat extends JbwmCommand implements Listener {
 
     public JbwmMinezChat() {
         super("localchat");
+        Jbwm.dodajPermisje("localchat.bypass");
     }
+
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
@@ -40,10 +43,10 @@ public class JbwmMinezChat extends JbwmCommand implements Listener {
             case "bypass":
                 if (!isChatBypassing(player)) {
                     player.setMetadata("bypass", new FixedMetadataValue(plugin, true));
-                    player.sendMessage("Mozesz pisac globalnie");
+                    player.sendMessage(ChatColor.GREEN +"Możesz pisać globalnie");
                 } else {
                     player.removeMetadata("bypass", plugin);
-                    player.sendMessage("Twoje wiadomosci sa lokalne");
+                    player.sendMessage(ChatColor.RED + "Twoje wiadomosci sa lokalne");
                 }
         }
         return true;
@@ -56,16 +59,11 @@ public class JbwmMinezChat extends JbwmCommand implements Listener {
     public void onPlayerNearbyChat(AsyncPlayerChatEvent e) {
         Player p = e.getPlayer();
         if (!isChatBypassing(p)) {
-            int distance = 100;
-            Location otherplayerlocation = e.getPlayer().getLocation();
-            for (Player player : e.getRecipients()) {
-                if (player.getLocation().distance(otherplayerlocation) > distance) {
-                    e.getRecipients().remove(player);
-                }
+            int distance = config.conf.getInt("messagedistance");
+            e.getRecipients().removeIf(player-> player.getLocation().distance(e.getPlayer().getLocation()) > distance);
 
-            }
         }
-        else
-            return;
+        else return;
     }
+
 }
