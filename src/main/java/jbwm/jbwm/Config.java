@@ -26,7 +26,7 @@ public class Config {
      * @param sc scieżka do pliku z folderu plugins/Jbwm
      */
     public Config(String sc) {
-        this.f = new File(Jbwm.plugin.getDataFolder().getAbsolutePath() + "\\" + sc + ".yml");
+        this.f = new File(Jbwm.plugin.getDataFolder().getAbsolutePath() + "/" + sc + ".yml");
         this.reload();
     }
 
