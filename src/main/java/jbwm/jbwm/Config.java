@@ -77,6 +77,7 @@ public class Config {
             conf.set(sc, obj);
     }
 
+
     @SuppressWarnings("resource")
     public static boolean wyjmijPlik(String co, String gdzie) {
         Jbwm.warn(co, gdzie);
