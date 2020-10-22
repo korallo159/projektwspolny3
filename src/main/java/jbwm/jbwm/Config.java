@@ -53,11 +53,11 @@ public class Config {
         if (!this.f.exists())
             try {
                 String sc = f.getAbsolutePath();
-                File dir = new File(sc.substring(0, sc.lastIndexOf("\\")));
+                File dir = new File(sc.substring(0, sc.lastIndexOf("/")));
                 if (!dir.exists())
                     dir.mkdirs();
 
-                if (!wyjmijPlik(sc.substring(sc.lastIndexOf("\\") + 1), sc)) {
+                if (!wyjmijPlik(sc.substring(sc.lastIndexOf("/") + 1), sc)) {
                     f.createNewFile();
                     String path = f.getAbsolutePath();
                     Jbwm.log("Created new empty config " + path);
