@@ -39,6 +39,7 @@ public class JbwmMinezChat extends JbwmCommand implements Listener {
         Player p = e.getPlayer();
         if(p.hasPermission("localchat.bypass")){
             p.setMetadata("bypass", new FixedMetadataValue(plugin, true));
+
         }
     }
 
@@ -50,6 +51,7 @@ public class JbwmMinezChat extends JbwmCommand implements Listener {
         switch (args[0]) {
             case "reload":
                 config.reload();
+                player.sendMessage("Przeladowano localchat");
                 break;
             case "bypass":
                 if (!isChatBypassing(player)) {
@@ -71,7 +73,7 @@ public class JbwmMinezChat extends JbwmCommand implements Listener {
         Player p = e.getPlayer();
         if (!isChatBypassing(p)) {
             int distance = config.conf.getInt("messagedistance");
-            e.getRecipients().removeIf(player-> player.getLocation().distance(e.getPlayer().getLocation()) > distance);
+            e.getRecipients().removeIf(player-> player.getLocation().distance(e.getPlayer().getLocation()) > distance && !player.hasMetadata("bypass"));
 
         }
         else return;
