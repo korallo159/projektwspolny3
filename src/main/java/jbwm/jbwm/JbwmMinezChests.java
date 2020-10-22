@@ -260,7 +260,6 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
     }
 
 
-
     // Command
 
     @Override
