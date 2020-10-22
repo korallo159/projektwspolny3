@@ -69,6 +69,16 @@ public class Config {
     }
 
 
+    public void set(String sc, Object obj) {
+        conf.set(sc, obj);
+    }
+    public void setDefault(String sc, Object obj) {
+        if (!conf.contains(sc))
+            conf.set(sc, obj);
+    }
+
+
+
     @SuppressWarnings("resource")
     public static boolean wyjmijPlik(String co, String gdzie) {
         Jbwm.warn(co, gdzie);
