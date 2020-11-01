@@ -11,7 +11,6 @@ import org.bukkit.block.Chest;
 import org.bukkit.block.DoubleChest;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -58,7 +57,7 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
 
         itemMeta.setDisplayName(ChatColor.RED + "Treasure chest");
 
-        ArrayList<String> lore = new ArrayList<String>();
+        ArrayList<String> lore = new ArrayList<>();
         lore.add(ChatColor.DARK_RED + "treasure chest");
         itemMeta.setLore(lore);
 
@@ -90,9 +89,9 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
         Chest chest = getTchest(e);
         if (chest == null) return;
 
-        Bukkit.getServer().getScheduler().runTaskLater(plugin, () -> {
-            removeChest(chest.getInventory().getLocation());
-        }, 5 * 60 * 20);
+        Bukkit.getServer().getScheduler().runTaskLater(plugin, () ->
+            removeChest(chest.getInventory().getLocation())
+        , 5 * 60 * 20);
     }
     @EventHandler
     public void onBlockBreak(BlockBreakEvent e) {
@@ -102,6 +101,7 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
         if (!(state instanceof Chest)) return;
         Chest chest = (Chest) state;
 
+        if (chest.getCustomName() == null) return;
         if (!chest.getCustomName().equals(ChatColor.RED + "Treasure chest")) return;
 
         Location loc = chest.getInventory().getLocation();
@@ -190,6 +190,9 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
     }
 
     void removeChest(Location loc) {
+        if (!loc.getBlock().getType().equals(Material.CHEST))
+            return;
+
         Chest oldChest = (Chest) loc.getBlock().getState();
 
         String id = findChest(loc);
