@@ -222,6 +222,8 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
     }
 
     void placeTChest(Config config, Location loc) {
+        if (loc.getBlock().getType().equals(Material.CHEST))
+            return;
         String data = config.conf.getString("Data");
         List<ItemStack> items = (List<ItemStack>) config.conf.getList("Items");
 
