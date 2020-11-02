@@ -86,12 +86,15 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
 
     @EventHandler
     public void onInventoryOpen(InventoryOpenEvent e) {
+        if (e.getPlayer() == null || !(e.getPlayer() instanceof Player) || isEditing((Player) e.getPlayer()))
+            return;
+
         Chest chest = getTchest(e);
         if (chest == null) return;
 
         Bukkit.getServer().getScheduler().runTaskLater(plugin, () ->
             removeChest(chest.getInventory().getLocation())
-        , 5 * 60 * 20);
+        , 60 * 20);
     }
     @EventHandler
     public void onBlockBreak(BlockBreakEvent e) {
@@ -203,6 +206,8 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
         Location _loc = getSecondChest(oldChest);
         Supplier<Location> secondChest = () -> _loc;
 
+        oldChest.getInventory().clear();
+
         boolean doubleChest = !oldChest.getBlockData().getAsString().contains("type=single");
         if (doubleChest)
             secondChest.get().getBlock().setType(Material.AIR);
@@ -226,6 +231,7 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
             return;
         String data = config.conf.getString("Data");
         List<ItemStack> items = (List<ItemStack>) config.conf.getList("Items");
+        int change = config.conf.getInt("Change", 40);
 
         Block block = loc.getBlock();
 
@@ -244,7 +250,7 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
         newChest.setCustomName(ChatColor.RED + "Treasure chest");
         newChest.update();
 
-        insertItems(newChest.getInventory(), items);
+        insertItems(newChest.getInventory(), items, change);
     }
 
     /**
@@ -253,8 +259,7 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
      * @param inv Inventory
      * @param items lista itemów
      */
-    void insertItems(Inventory inv, List<ItemStack> items) {
-        int change = 40;
+    void insertItems(Inventory inv, List<ItemStack> items, int change) {
         Random rand = new Random();
         for (ItemStack item : items) {
             if (rand.nextInt(100) < change) {
@@ -270,7 +275,7 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
         if (args.length <= 1)
-            return utab(args, "addnew"/*, "remove"*/, "editor", "tp", "setrespawntime", "reload");
+            return utab(args, "addnew"/*, "remove"*/, "editor", "tp", "setrespawntime", "setchange", "reload");
         return null;
     }
     @Override
@@ -278,6 +283,7 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
         if (!(sender instanceof Player)) return true;
         if (args.length < 1) return false;
         Player player = ((Player) sender).getPlayer();
+        Block block;
         switch (args[0]) {
             case "addnew":
                 player.getInventory().addItem(getTchest(1));
@@ -299,10 +305,11 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
             */
             case "reload":
                 configLocations.reload();
+                player.sendMessage("Przeładowano");
                 break;
             case "tp":
-                if (StringUtils.isNumeric(args[0])) {
-                    String id = "" + Integer.valueOf(args[0]);
+                if (StringUtils.isNumeric(args[1])) {
+                    String id = "" + Integer.valueOf(args[1]);
                     if (this.configLocations.conf.get(id) != null) {
                         player.teleport(this.configLocations.conf.getLocation(id));
                         player.sendMessage("Przeteleportowano do skrzyni z id:" + id);
@@ -318,11 +325,45 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
                     player.sendMessage("Wylaczyles edytowanie tchestow.");
                 }
                 break;
+            case "setchange":
+                if (args.length < 2){
+                    player.sendMessage("/tchest setchange <0-100>");
+                    break;
+                }
+                int change = 0;
+                try {
+                    change = Integer.parseInt(args[1]);
+                } catch (Throwable e) {
+                    player.sendMessage("incorrect number");
+                    break;
+                }
+
+                block = player.getTargetBlock(5);
+                if (block.getState() instanceof Chest) {
+                    Chest chest = (Chest) block.getState();
+
+                    String chestName = chest.getCustomName();
+                    if (chestName == null || !chestName.equals(ChatColor.RED + "Treasure chest")) break;
+
+                    String id = findChest(chest.getInventory().getLocation());
+                    if (id == null) {
+                        player.sendMessage("To nie treasure chest");
+                        break;
+                    }
+
+                    Config config = getConfig(id);
+                    config.conf.set("Change", change);
+                    config.save();
+
+                    player.sendMessage("Ustawiłeś szanse na item w tej skrzyni na " + change + " %");
+                }
+
             case "setrespawntime":
                 if (args.length < 2){
                     player.sendMessage("/tchest setrespawntime <minutes>");
                     break;
                 }
+
                 int minutes = 0;
                 try {
                     minutes = Integer.parseInt(args[1]);
@@ -330,7 +371,8 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
                     player.sendMessage("incorrect minutes");
                     break;
                 }
-                Block block = player.getTargetBlock(5);
+
+                block = player.getTargetBlock(5);
                 if (block.getState() instanceof Chest) {
                     Chest chest = (Chest) block.getState();
 
@@ -349,7 +391,6 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
 
                     player.sendMessage("Ustawiłeś respawn tej skrzyni na " + minutes + " minut");
                 }
-
                 break;
 
         }
