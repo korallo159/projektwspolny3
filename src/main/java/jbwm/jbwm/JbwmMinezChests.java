@@ -146,7 +146,7 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
             Config config = getConfig(sc);
             config.set("Items", items);
             config.set("Data", chest.getBlockData().getAsString());
-            config.setDefault("Respawn", 5 * 60 * 60 * 20);
+            config.setDefault("Respawn", 45 * 60 * 20);
             config.save();
 
             configLocations.set(sc, loc);
@@ -231,7 +231,7 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
             return;
         String data = config.conf.getString("Data");
         List<ItemStack> items = (List<ItemStack>) config.conf.getList("Items");
-        int change = config.conf.getInt("Change", 40);
+        int change = config.conf.getInt("Change", 60);
 
         Block block = loc.getBlock();
 
