@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static jbwm.jbwm.Jbwm.plugin;
@@ -36,6 +37,7 @@ import static jbwm.jbwm.Jbwm.plugin;
 public class JbwmMinezChests extends JbwmCommand implements Listener {
     // id: location
     final Config configLocations = new Config("TreasurechestsLocations");
+    final Random rand = new Random();
 
     public JbwmMinezChests() {
         super("tchest");
@@ -260,13 +262,24 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
      * @param items lista itemów
      */
     void insertItems(Inventory inv, List<ItemStack> items, int change) {
-        Random rand = new Random();
-        for (ItemStack item : items) {
-            if (rand.nextInt(100) < change) {
-                int slot = rand.nextInt(inv.getSize());
-                inv.setItem(slot, item);
-            }
-        }
+        for (ItemStack item : items)
+            if (rand.nextInt(100) + 1 <= change)
+                insertItem(inv, item);
+    }
+    private void insertItem(Inventory inv, ItemStack item) {
+        Predicate<Integer> isAir = i -> {
+            ItemStack _item = inv.getItem(i);
+            boolean w =  _item == null ||  _item.getType().isAir();
+            if (w) inv.setItem(i, item);
+            return w;
+        };
+
+        int counter = 0;
+        do if (isAir.test(rand.nextInt(inv.getSize()))) return;
+        while (++counter < 30);
+
+        for (int i=0; i<inv.getSize(); i++)
+            if (isAir.test(i)) return;
     }
 
 
@@ -357,7 +370,7 @@ public class JbwmMinezChests extends JbwmCommand implements Listener {
 
                     player.sendMessage("Ustawiłeś szanse na item w tej skrzyni na " + change + " %");
                 }
-
+                break;
             case "setrespawntime":
                 if (args.length < 2){
                     player.sendMessage("/tchest setrespawntime <minutes>");
