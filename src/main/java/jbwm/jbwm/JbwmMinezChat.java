@@ -1,5 +1,6 @@
 package jbwm.jbwm;
 
+import com.google.common.collect.Lists;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -16,7 +17,12 @@ import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.metadata.FixedMetadataValue;
 
+import javax.annotation.processing.Messager;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
+
 import static jbwm.jbwm.Jbwm.plugin;
 
 public class JbwmMinezChat extends JbwmCommand implements Listener {
@@ -24,13 +30,15 @@ public class JbwmMinezChat extends JbwmCommand implements Listener {
     public JbwmMinezChat() {
         super("localchat");
         Jbwm.dodajPermisje("localchat.bypass");
+        ustawKomende("krzyk", "Wpisz aby krzyczeć", Lists.newArrayList());
     }
-
+    private boolean localchat = true;
+    private HashMap<UUID, Integer> screamCooldown = new HashMap<>();
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
         if (args.length <= 1)
-        return utab(args, "bypass");
+        return utab(args, "bypass", "toggle");
         return null;
     }
 
@@ -61,6 +69,14 @@ public class JbwmMinezChat extends JbwmCommand implements Listener {
                     player.removeMetadata("bypass", plugin);
                     player.sendMessage(ChatColor.RED + "Twoje wiadomosci sa lokalne");
                 }
+                break;
+            case "toggle":
+                if(localchat)
+                    localchat = false;
+                else
+                    localchat = true;
+                break;
+
         }
         return true;
     }
@@ -69,8 +85,14 @@ public class JbwmMinezChat extends JbwmCommand implements Listener {
     }
     Config config = new Config("LocalChatConfig");
     @EventHandler
-    public void onPlayerNearbyChat(AsyncPlayerChatEvent e) {
+    public void onAsyncPlayerChat(AsyncPlayerChatEvent e) {
         Player p = e.getPlayer();
+       String message = e.getMessage();
+       if(message.contains("/krzycz")){
+        p.sendMessage(message);
+        return;
+       }
+        if(localchat)
         if (!isChatBypassing(p)) {
             int distance = config.conf.getInt("messagedistance");
             e.getRecipients().removeIf(player-> player.getLocation().distance(e.getPlayer().getLocation()) > distance && !player.hasMetadata("bypass"));
